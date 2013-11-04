@@ -1,0 +1,189 @@
+C51 COMPILER V7.20   PROYECTO                                                              06/18/2006 21:46:56 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE PROYECTO
+OBJECT MODULE PLACED IN proyecto.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE proyecto.c ROM(SMALL) BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #define UCHAR unsigned char
+   2          #define UINT unsigned int
+   3          
+   4          #include <REG2051.H>
+   5          //#include <stdio.h>
+   6          #include <motor1.h>
+   7          #include <teclado1.h>
+   8          
+   9          // Conexiones de P1
+  10          //    7  6  5  4    3  2  1  0
+  11          //   NU-c1-f1-c0   f4-c2-f3-f2
+  12          //               2              1          3
+  13           
+  14          
+  15          void teclado(void);
+  16          void inicioprograma(void);
+  17          
+  18          void comparar(UCHAR *clv);
+  19          void Timer0Init(void); 
+  20          UINT telcado(void);
+  21          
+  22          enum eSTATE {apagado, encendido,alarma};
+  23          enum eSTATE state = apagado;
+  24          enum eSTATE oldstate = apagado;
+  25          UCHAR clave[6];
+  26          UCHAR OK;
+  27          
+  28          
+  29          void main(void)
+  30           {
+  31   1         UCHAR uc=0xff;
+  32   1         kbInit();     /* Inicializa el teclado */
+  33   1              Timer0Init();   // Inicializar el temporizador 0 para el motor
+  34   1              MOTOR=0;   
+  35   1              
+  36   1         while(1)
+  37   1            {
+  38   2              inicioprograma();
+  39   2                      
+  40   2       
+  41   2           
+  42   2              }
+  43   1              /* FIN DE main */
+  44   1      
+  45   1      }
+  46          /*******************************************************
+  47            void kbInit(void)
+  48            Inicia el teclado para que pueda detectar pulsaciones.
+  49            (leyendo las filas) 
+  50          ********************************************************/
+  51          
+  52          
+  53          void inicioprograma(void) 
+  54          {
+  55   1      UINT p=0;
+C51 COMPILER V7.20   PROYECTO                                                              06/18/2006 21:46:56 PAGE 2   
+
+  56   1              switch(state)
+  57   1              
+  58   1              {
+  59   2                      
+  60   2                      case encendido: 
+  61   2                                 OK=2;   
+  62   2                                      TMOTOR=0; //T=2ms se supone que gira 0 grados
+  63   2                                      LR=0;LV=1;LA=1; //encendemos led rojo
+  64   2                                      //printf("\n%s", "Estado encendido");
+  65   2                                      /*if(IR==1 || PULSADOR==1)        
+  66   2                                                      {state=alarma;
+  67   2                                                       break;}*/
+  68   2      
+  69   2                                                      teclado();
+  70   2                                                      while(kbHit() != 0);
+  71   2      
+  72   2                                                      if(OK=='0')        
+  73   2                                    {
+  74   3                                                              state=alarma;
+  75   3                                                        }
+  76   2                                                      if(OK=='1')
+  77   2                                                              state=apagado;
+  78   2                                                      
+  79   2                                                      
+  80   2                                                      
+  81   2                              break;
+  82   2      
+  83   2                      case apagado:
+  84   2                                      OK=0;
+  85   2                                           
+  86   2                                      TMOTOR=1; //T=2ms se supone que gira 90 grados,abrimos puerta
+  87   2                                      LR=1;LV=0;LA=1;
+  88   2                                      //      printf("\n%s", "Estado apagado");
+  89   2                                      teclado();
+  90   2                                      while(kbHit() != 0);
+  91   2                                      if(OK=='1')
+  92   2                                              state=encendido;
+  93   2                                      break;
+  94   2              
+  95   2                      case alarma:
+  96   2                                      OK=0;
+  97   2                                      TMOTOR=0;
+  98   2                                      //led amarillo de alarma
+  99   2                                      LR=1;LV=1;LA=0;
+ 100   2                                      //printf("\n%s", "Estado Alarma");
+ 101   2                                      teclado();
+ 102   2                                      while(kbHit() != 0);
+ 103   2                                      if(OK=='1')
+ 104   2                                              state=apagado;
+ 105   2                              
+ 106   2                      }
+ 107   1      
+ 108   1              
+ 109   1              if(oldstate != state){
+ 110   2                      oldstate = state;
+ 111   2                              }
+ 112   1              
+ 113   1      }
+ 114          
+ 115          void teclado(void)
+ 116          {
+ 117   1      UCHAR uc=0xff;          
+C51 COMPILER V7.20   PROYECTO                                                              06/18/2006 21:46:56 PAGE 3   
+
+ 118   1      
+ 119   1      
+ 120   1      uc=kbRead();
+ 121   1      //printf("%c", uc);       // Si se ha pulsado una tecla enviala a través del puerto serie
+ 122   1                            if(uc != 0xff)
+ 123   1                                      {
+ 124   2                                               if (uc=='*')
+ 125   2                                                      {       
+ 126   3                                                      
+ 127   3                                                      UINT i=0;    
+ 128   3                                                      //LR=0;LV=0;LA=1;
+ 129   3                                                              leerclave(uc,&clave);
+ 130   3                                                              clave[4] = 0;
+ 131   3                                                              //printf("\n%s", clave);
+ 132   3                                                              comparar(&clave);                                                                                                       
+ 133   3                                                              //printf("\n%s", "Ok=");
+ 134   3                                                              //printf("%c",OK);
+ 135   3                                                      }
+ 136   2                                      
+ 137   2                                       
+ 138   2                              }
+ 139   1      }
+ 140          
+ 141          
+ 142                  
+ 143          
+ 144          void comparar(UCHAR *clv)
+ 145          {
+ 146   1      UCHAR usuario[4] = { '1', '4', '7', '2'}; 
+ 147   1      UCHAR i=0;
+ 148   1                      for (i=0;i<4;i++)
+ 149   1                              {       
+ 150   2                      
+ 151   2                              if (clv[i]!=usuario[i])
+ 152   2                                      {i=0;break;}
+ 153   2                      
+ 154   2                      }
+ 155   1      
+ 156   1      if(i==4) 
+ 157   1              OK='1'; //Cuando ha leido toda la clave OK
+ 158   1      else OK='0';    
+ 159   1      //devuelve un cero si es incorrecto y un 1 si es correcto
+ 160   1      }
+ 161          
+ 162          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    242    ----
+   CONSTANT SIZE    =      4    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9      12
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

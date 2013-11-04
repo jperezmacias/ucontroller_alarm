@@ -1,0 +1,78 @@
+C51 COMPILER V7.20   MOTOR                                                                 06/18/2006 21:46:57 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE MOTOR
+OBJECT MODULE PLACED IN motor.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE motor.c ROM(SMALL) BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include <REG2051.H>
+   2          //#include <stdio.h>
+   3          
+   4          #define UCHAR unsigned char
+   5          #define UINT unsigned int
+   6          #include "motor1.h"
+   7          
+   8          UINT TMOTOR; //si es 1 T=1 si es 0 T=2 
+   9          
+  10          enum eSTATE {apagado, encendido,alarma};
+  11          extern enum eSTATE state;
+  12          
+  13          void Timer0Init() //Inicialización del timer
+  14          {
+  15   1              TMOD&=0xF0;
+  16   1              TMOD|=0x01;
+  17   1              TL0=0xFE;
+  18   1              TH0=0xB7;
+  19   1              TR0=1; 
+  20   1              ET0=1;
+  21   1              EA=1;
+  22   1              //EX0=0;
+  23   1      }
+  24          
+  25          InteTimer0() interrupt 1
+  26          {
+  27   1      if (MOTOR==0)
+  28   1              {       
+  29   2                      MOTOR=1;
+  30   2                              if (TMOTOR==1)
+  31   2                                      {TL0=0X66; //t=1ms
+  32   3                                      TH0=0XFC;}
+  33   2                              else
+  34   2                                      {TL0=0xCC;
+  35   3                                      TH0=0xF8;}//T=2ms
+  36   2              }
+  37   1      else    
+  38   1              {       TL0=0xFE;
+  39   2                      TH0=0xB7;  //20 ms
+  40   2                      MOTOR=0;
+  41   2      }
+  42   1      
+  43   1      //El intervalo de 20ms se aprovecha para comprobar los sensores
+  44   1      if(MOTOR==0){
+  45   2      if((state==encendido) && (IR==1 || PULSADOR==0))
+  46   2      {/*Si se encuentra en el estado encendido y alguno de los sensores es activado, se enciende el led rojo y 
+  47   3       estado pasa a alarma */
+  48   3      state=alarma; 
+  49   3      LR=1;LV=1;LA=0;
+  50   3      //printf("\n%s", "Estado Alarma");
+  51   3                      }       
+  52   2      }       
+  53   1      }
+
+
+C51 COMPILER V7.20   MOTOR                                                                 06/18/2006 21:46:57 PAGE 2   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     88    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

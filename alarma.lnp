@@ -1,0 +1,5 @@
+"STARTUP.obj",
+"proyecto.obj",
+"teclado.obj",
+"motor.obj" 
+TO "alarma" 
